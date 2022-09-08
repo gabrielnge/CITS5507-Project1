@@ -128,8 +128,8 @@ int main(int argc, char *argv[]){
     int visited[n][n];
     memset(visited, 0, sizeof(visited));
 
-    // Make/seed lattice
-    if (argv[1] == "-s") {
+    // Seed lattice (Site)
+    if (strcmp("-s", argv[1]) == 0) {
         for(int i = 0; i < n; i++) {
             for(int j = 0; j < n; j++) {
                 if(r() >= p){
@@ -141,12 +141,52 @@ int main(int argc, char *argv[]){
             }
         }
     }
-    if (argv[1] == "-b") {
+    // Seed lattice (Bond)
+    if (strcmp("-b", argv[1]) == 0) {
         for(int i = 0; i < n; i++) {
-          for (int j = 0; j < n; j++) {
-            //DO BOND SEEDING
-          }
+            for (int j = 0; j < n; j++) {
+                if (i == 0 && j == 0) {
+                    if (r() >= p) { lattice[i+1][j] = 1;
+                    } else { lattice[i+1][j] = 0;}
+                    if (r() >= p) { lattice[n-1][j] = 1;
+                    } else { lattice[n-1][j] = 0;}
+                    if (r() >= p) { lattice[i][j+1] = 1;
+                    } else { lattice[i][j+1] = 0;}
+                    if (r() >= p) { lattice[i][n-1] = 1;
+                    } else { lattice[i][n-1] = 0;}
+                } else if (i == 0 && ((n-1) > j > 0)) {
+                    if (r() >= p) { lattice[i+1][j] = 1;
+                    } else { lattice[i+1][j] = 0;}
+                    if (r() >= p) { lattice[n-1][j] = 1;
+                    } else { lattice[n-1][j] = 0;}
+                    if (r() >= p) { lattice[i][j+1] = 1;
+                    } else { lattice[i][j+1] = 0;}
+                    if (r() >= p) { lattice[i][j-1] = 1;
+                    } else { lattice[i][j-1] = 0;}
+                } else if (((n-1) > i > 0) && j == 0) {
+                    if (r() >= p) { lattice[i+1][j] = 1;
+                    } else { lattice[i+1][j] = 0;}
+                    if (r() >= p) { lattice[i-1][j] = 1;
+                    } else { lattice[i-1][j] = 0;}
+                    if (r() >= p) { lattice[i][j+1] = 1;
+                    } else { lattice[i][j+1] = 0;}
+                    if (r() >= p) { lattice[i][n-1] = 1;
+                    } else { lattice[i][n-1] = 0;}
+                } else if (i == (n-1) || j == (n-1)) {
+                    continue;
+                } else {
+                    if (r() >= p) { lattice[i+1][j] = 1;
+                    } else { lattice[i+1][j] = 0;}
+                    if (r() >= p) { lattice[i-1][j] = 1;
+                    } else { lattice[i-1][j] = 0;}
+                    if (r() >= p) { lattice[i][j+1] = 1;
+                    } else { lattice[i][j+1] = 0;}
+                    if (r() >= p) { lattice[i][j-1] = 1;
+                    } else { lattice[i][j-1] = 0;}
+                }
+            }
         }
+        if (r() >= p) { lattice[n-1][n-1] = 1; } else { lattice[n-1][n-1] = 0;}
     }
 
     // Cluster search via DFS
