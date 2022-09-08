@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 int indices[] = {-1, 0, +1};
-static int n = 5;
+static int n = 128;
 
 // For seeding
 double r()
@@ -105,6 +105,11 @@ void DFS(int lattice[n][n], int row, int column, int visited[n][n], int *cluster
 }
 
 int main(int argc, char *argv[]){
+
+    
+    clock_t tic = clock();  
+
+  
     if (argc != 3) {
         fprintf(stderr, "ERROR - USAGE: perc.exe (-s || -b) p\n");
         return 1;
@@ -212,13 +217,17 @@ int main(int argc, char *argv[]){
     }
 
     //PRINTING LATTICE
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            printf("%i ", lattice[i][j]);
-        }
-        printf("\n");
-    }
+    // for (int i = 0; i < n; i++) {
+    //     for (int j = 0; j < n; j++) {
+    //         printf("%i ", lattice[i][j]);
+    //     }
+    //     printf("\n");
+    // }
     printf("%d\n", no_clusters);
     printf("%d\n", max_cluster);
     printf("%s\n", percolation ? "true" : "false");
+
+    
+    clock_t toc = clock();
+    printf("Elapsed: %f seconds\n", (double)(toc - tic) / CLOCKS_PER_SEC);
 }
