@@ -4,9 +4,10 @@
 #include <string.h>
 #include <time.h>
 #include <stdbool.h>
+#include <omp.h>
 
 int indices[] = {-1, 0, +1};
-static int n = 128;
+static int n = 20;
 
 // For seeding
 double r()
@@ -137,7 +138,10 @@ int main(int argc, char *argv[]){
     if (strcmp("-s", argv[1]) == 0) {
         for(int i = 0; i < n; i++) {
             for(int j = 0; j < n; j++) {
-                if(r() >= p){
+                double rand = r();
+                //printf("%i %i %.2f\n", i, j, rand);
+
+                if(rand >= p){
                     lattice[i][j] = 1;
                 }
                 else {
@@ -217,12 +221,12 @@ int main(int argc, char *argv[]){
     }
 
     //PRINTING LATTICE
-    // for (int i = 0; i < n; i++) {
-    //     for (int j = 0; j < n; j++) {
-    //         printf("%i ", lattice[i][j]);
-    //     }
-    //     printf("\n");
-    // }
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            printf("%i ", lattice[i][j]);
+        }
+        printf("\n");
+    }
     printf("%d\n", no_clusters);
     printf("%d\n", max_cluster);
     printf("%s\n", percolation ? "true" : "false");
