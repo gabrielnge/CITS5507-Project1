@@ -3,11 +3,12 @@
 #include <ctype.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 #include <stdbool.h>
 #include <omp.h>
 
 int indices[] = {-1, 0, +1};
-static int n = 256;
+static int n = 110;
 
 // For seeding
 double r()
@@ -207,18 +208,48 @@ int main(int argc, char *argv[]){
     memset(r, 0, sizeof(r));
     int c[n];
     memset(c, 0, sizeof(c));
-    for (int i = 0; i < n; i++) {
-      for (int j = 0; j < n; j++) {
-        if ((lattice[i][j] == 1) && (!visited[i][j])) {
-          no_clusters += 1;
-          cluster = 0;
-          memset(r, 0, sizeof(r));
-          memset(c, 0, sizeof(c));
-          DFS(lattice, i, j, visited, &cluster, &percolation, r, c);
-          if (cluster > max_cluster) { max_cluster = cluster;}
-        }
-      }
+
+    int num_threads;
+    if (n >= 256) {
+        num_threads = 64;
+    } else {
+        num_threads = 16;
     }
+
+    int sqroot = sqrt(num_threads);
+
+    #pragma omp parallel num_threads(num_threads)
+    {
+        int beg_row = omp_get_thread_num()/sqroot * (n/sqrt(num_threads));
+        int last_row = (omp_get_thread_num()/sqroot + 1) * (n/sqrt(num_threads));
+
+        int beg_col = omp_get_thread_num()%sqroot * (n/sqrt(num_threads));
+        int last_col;
+        if ((omp_get_thread_num() + 1)%sqroot * (n/sqrt(num_threads)) == 0){
+            last_col = n;
+        } else {
+            last_col = (omp_get_thread_num() + 1)%sqroot * (n/sqrt(num_threads));
+        }
+
+        #pragma omp critical
+        {
+            printf("%d beg row: %i end row: %i", omp_get_thread_num(), beg_row, last_row);
+            printf("\t beg col: %i end col: %i\n", beg_col, last_col);
+        }
+    }
+
+    // for (int i = 0; i < n; i++) {
+    //   for (int j = 0; j < n; j++) {
+    //     if ((lattice[i][j] == 1) && (!visited[i][j])) {
+    //       no_clusters += 1;
+    //       cluster = 0;
+    //       memset(r, 0, sizeof(r));
+    //       memset(c, 0, sizeof(c));
+    //       DFS(lattice, i, j, visited, &cluster, &percolation, r, c);
+    //       if (cluster > max_cluster) { max_cluster = cluster;}
+    //     }
+    //   }
+    // }
 
     //PRINTING LATTICE
     // for (int i = 0; i < n; i++) {

@@ -7,7 +7,7 @@
 #include <omp.h>
 
 int indices[] = {-1, 0, +1};
-static int n = 20;
+static int n = 256;
 
 // For seeding
 double r()
@@ -218,27 +218,29 @@ int main(int argc, char *argv[]){
     int c[n];
     memset(c, 0, sizeof(c));
 
-    //#pragma omp parallel for num_threads(n) private(cluster) reduction(+ : no_clusters)
+    #pragma omp parallel for num_threads(n) private(cluster, r, c) shared(lattice, visited) reduction(+ : no_clusters)
     for (int i = 0; i < n; i++) {
-      //printf("%i\n",i);
       for (int j = 0; j < n; j++) {
         if ((lattice[i][j] == 1) && (!visited[i][j])) {
-        no_clusters += 1;
-        cluster = 0;
-        memset(r, 0, sizeof(r));
-        memset(c, 0, sizeof(c));
-        DFS(lattice, i, j, visited, &cluster, &percolation, r, c);
-        if (cluster > max_cluster) { max_cluster = cluster;}
+          no_clusters += 1;
+          cluster = 0;
+          memset(r, 0, sizeof(r));
+          memset(c, 0, sizeof(c));
+
+          #pragma omp critical
+            DFS(lattice, i, j, visited, &cluster, &percolation, r, c);
+            
+          if (cluster > max_cluster) { max_cluster = cluster;}
         }
       }
     }
     //PRINTING LATTICE
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            printf("%i ", lattice[i][j]);
-        }
-        printf("\n");
-    }
+    // for (int i = 0; i < n; i++) {
+    //     for (int j = 0; j < n; j++) {
+    //         printf("%i ", lattice[i][j]);
+    //     }
+    //     printf("\n");
+    // }
     printf("%d\n", no_clusters);
     printf("%d\n", max_cluster);
     printf("%s\n", percolation ? "true" : "false");
