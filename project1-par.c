@@ -31,42 +31,42 @@ void DFS(int lattice[n][n], int row, int column, int visited[n][n], int *cluster
     }
 
     // Check for percolation
-    int new_index = 0;
-    for (int i = 0; i < n; i++) {
-      if (row == r[i]) {
-        new_index = 0;
-      } else {
-        new_index = 1;
-      }
-    }
-    if (new_index == 1) { r[row] = row; }
-    new_index = false;
-    for (int i = 0; i < n; i++) {
-      if (column == c[i]) {
-        new_index = false;
-      } else {
-        new_index = true;
-      }
-    }
-    if (new_index) { c[column] = column; }
-    int r_unique = 1;
-    int c_unique = 1;
-    for (int i = 0; i < n; i++) {
-      for (int j = 0; j < n; j++) {
-        if (i != j) {
-          if (r[i] == r[j]) {
-            //printf("%d", r[j]);
-            r_unique = 0;
-          }
-          if (c[i] == c[j]) {
-            c_unique = 0;
-          }
-        }
-      }
-    }
-    if (c_unique == 1 || r_unique == 1) {
-      *percolation = true;
-    }
+    // int new_index = 0;
+    // for (int i = 0; i < n; i++) {
+    //   if (row == r[i]) {
+    //     new_index = 0;
+    //   } else {
+    //     new_index = 1;
+    //   }
+    // }
+    // if (new_index == 1) { r[row] = row; }
+    // new_index = false;
+    // for (int i = 0; i < n; i++) {
+    //   if (column == c[i]) {
+    //     new_index = false;
+    //   } else {
+    //     new_index = true;
+    //   }
+    // }
+    // if (new_index) { c[column] = column; }
+    // int r_unique = 1;
+    // int c_unique = 1;
+    // for (int i = 0; i < n; i++) {
+    //   for (int j = 0; j < n; j++) {
+    //     if (i != j) {
+    //       if (r[i] == r[j]) {
+    //         //printf("%d", r[j]);
+    //         r_unique = 0;
+    //       }
+    //       if (c[i] == c[j]) {
+    //         c_unique = 0;
+    //       }
+    //     }
+    //   }
+    // }
+    // if (c_unique == 1 || r_unique == 1) {
+    //   *percolation = true;
+    // }
 
 
     visited[row][column] = 1;
