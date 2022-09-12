@@ -9,12 +9,12 @@
 
 int total = 0;
 int indices[] = {-1, 0, +1};
-#define n 10
+#define n 100
 
 // Structure for keeping details such as its constituent locations and length for each cluster
 typedef struct cluster {
   int id;
-  int locs[n][2];
+  int locs[n*n][2];
   int length;
 } cluster;
 
@@ -78,7 +78,7 @@ void DFS(int lattice[n][n], int row, int column, int visited[n][n], int beg_row,
     // }
 
     // Add site to visited array
-    visited[row][column] = 1;
+    visited[row][column] = id;
     total += 1;
 
     // Add site to corresponding cluster in list of clusters
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]){
     int (*lattice)[n] = malloc(sizeof(int[n][n]));
     int visited[n][n];
     memset(visited, 0, sizeof(visited)); // Initialise visisted array to 0's
-    cluster (*cluster_list) = calloc(n*n,sizeof(int[n]));
+    cluster (*cluster_list) = calloc(n*n,sizeof(int[n*n]));
 
     //memset(visited, 0, sizeof(visited));
 
@@ -222,7 +222,6 @@ int main(int argc, char *argv[]){
 
     // Cluster search via DFS
     int max_cluster = 0;
-    int no_clusters = 0;
     //int cluster = 0;
     bool percolation = false;
     int r[n];
@@ -243,7 +242,7 @@ int main(int argc, char *argv[]){
     * into sections equal to the total number of threads */
     int sqroot = sqrt(num_threads);
 
-    int id = 0;
+    int id = 1;
     /* Each thread assigns itself the rows and columns (section) of the lattice they are handling */
     #pragma omp parallel num_threads(num_threads)
     {
@@ -258,22 +257,22 @@ int main(int argc, char *argv[]){
           last_col = (omp_get_thread_num() + 1)%sqroot * (n/sqrt(num_threads));
       }
 
-      #pragma omp critical
-      {
-          printf("\n%d beg row: %i end row: %i", omp_get_thread_num(), beg_row, last_row);
-          printf("\tbeg col: %i end col: %i", beg_col, last_col);
-      }
+      // #pragma omp critical
+      // {
+      //     printf("\n%d beg row: %i end row: %i", omp_get_thread_num(), beg_row, last_row);
+      //     printf("\tbeg col: %i end col: %i", beg_col, last_col);
+      // }
 
 
 
       // Each thread performs recursive dfs in their respective lattice sections
       int current_id = 0;
       for (int i = beg_row; i < last_row; i++){
-        printf("\nrow: %i", i);
+        // printf("\nrow: %i", i);
         for (int j = beg_col; j < last_col; j++) {
-          printf("\ncol: %i", j);
-          printf("\nsite = %i", lattice[i][j]);
-          printf("\nvisited = %d", visited[i][j]);
+          // printf("\ncol: %i", j);
+          // printf("\nsite = %i", lattice[i][j]);
+          // printf("\nvisited = %d", visited[i][j]);
         if ((lattice[i][j] == 1) && (!visited[i][j])) {
 
           #pragma omp critical
@@ -296,39 +295,187 @@ int main(int argc, char *argv[]){
       } 
     }
 
-    printf("\ntotal sites %i", total);
+    // printf("\ntotal sites %i", total);
+    
+    // printf("\n");
+    // for (int i = 0; i < n; i++) {
+    //     for (int j = 0; j < n; j++) {
+    //         printf("%i ", visited[i][j]);
+    //     }
+    //     printf("\n");
+    // }
 
     /* Parallel stitching of the lattice segments */
-    //  num_threads = sqrt(num_threads);
-    //  #pragma omp parallel num_threads(num_threads) shared(no_clusters)
-    //  {
-    //    #pragma omp for 
-    //    for (int thread = 0; thread < num_threads; thread++) {
-    //     int beg_row = (omp_get_thread_num() * ((n/num_threads)));
-    //     int last_row = beg_row + (n/num_threads);
+    int id1, id2, new_row, new_col, current_row;
+     #pragma omp parallel num_threads(sqroot) private(id1, id2, new_row, new_col, current_row)
+     //#pragma omp master
+     { 
 
+      // -- Stitch along the columns of neighbouring sections first --
+       
+      int beg_row = omp_get_thread_num()%sqroot * (n/sqrt(num_threads));
+      int last_row;
+      if ((omp_get_thread_num() + 1)%sqroot * (n/sqrt(num_threads)) == 0){
+          last_row = n;
+      } else {
+          last_row = (omp_get_thread_num() + 1)%sqroot * (n/sqrt(num_threads));
+      }
 
-    //      /* The adjacent columns in each section in each row are looped over */
-    //      for (int section = 1; section < num_threads + 1; section++) {
-    //       int last_col = section * n/num_threads;
-    //       int beg_col = last_col - 1;
+      //printf("\n%d rows: %i %i", omp_get_thread_num(), beg_row, last_row);
 
-    //       bool same_cluster = false;
+      /* The neighbouring columns in each section in each row are looped through */
 
-    //       #pragma omp critical
-    //       {
-    //        for (int current_row = beg_row; current_row < last_row; current_row++) {
-    //          printf("\n thread id: %d \t  row:  %i  [%i][%i]", omp_get_thread_num(), current_row, lattice[current_row][beg_col], lattice[current_row][last_col]);
-    //          if (lattice[current_row][beg_col] == 1 && lattice[current_row][last_col] == 1) {
-    //            printf(" both ones ");
-    //          } else {
-    //            same_cluster = false;
-    //          }
-    //        }
-    //       }
-    //      }
-    //    }
-    //  }
+      for (int section = 1; section < sqroot + 1; section++) {
+        int last_col = section%sqroot * (n/sqrt(num_threads));
+        int beg_col;
+        if (last_col == 0){
+          beg_col = n - 1;
+        } else {
+          beg_col = last_col - 1;
+        }
+        
+        //printf("\n%d rows: %i %i cols: %i %i", omp_get_thread_num(), beg_row, last_row, beg_col, last_col);
+
+        //printf("\ncol: %i %i", beg_col, last_col);
+        
+        int id1, id2;
+        for (int current_row = beg_row; current_row < last_row; current_row++) {
+
+          //printf("\n thread id: %d \t  row:  %i  [%i][%i]", omp_get_thread_num(), current_row, visited[current_row][beg_col], visited[current_row][last_col]);
+
+          if (visited[current_row][beg_col] != 0 && visited[current_row][last_col] != 0 && visited[current_row][beg_col] != visited[current_row][last_col]) {
+
+            //printf(" merge! ");
+
+            // The variable holding the number of unique cluster ids is decremented 
+            id -= 1;
+
+            // The clusters are merged
+            id1 = visited[current_row][beg_col];
+            id2 = visited[current_row][last_col];
+
+            //printf("\nAdded length: %i ",cluster_list[id2].length);
+
+            for (int site = 0; site < cluster_list[id2].length; site++){
+
+              int new_row = cluster_list[id2].locs[site][0];
+              int new_col = cluster_list[id2].locs[site][1];
+              //printf("\nnew loc: %i %i ", new_row, new_col);
+
+              // Add the locations the id2 cluster to the locations of the id1 cluster
+              cluster_list[id1].locs[cluster_list[id1].length][0] = new_row;
+              cluster_list[id1].locs[cluster_list[id1].length][1] = new_col;
+
+              
+              // The cluster being merged into (made bigger) has its length increased by the length of the other cluster
+              cluster_list[id1].length += 1;
+
+              //printf("\nNew length: %i ",cluster_list[id1].length);
+
+              // Replace id2 occurences with id1 on the visisted array
+              visited[new_row][new_col] = id1;
+            }
+            
+          }
+          // printf("\n");
+          // for (int i = 0; i < n; i++) {
+          //     for (int j = 0; j < n; j++) {
+          //         printf("%i ", visited[i][j]);
+          //     }
+          //     printf("\n");
+          // }
+        }
+      }
+     }
+     
+    // printf("\n column stitching complete\n");
+    
+    // for (int i = 0; i < n; i++) {
+    //     for (int j = 0; j < n; j++) {
+    //         printf("%i ", visited[i][j]);
+    //     }
+    //     printf("\n");
+    // }
+
+    int current_col;
+    #pragma omp parallel num_threads(sqroot) private(id1, id2, new_row, new_col, current_col) shared(max_cluster)
+      //#pragma omp master
+      { 
+
+       // -- Stitch along the columns of neighbouring sections first --
+       
+       int beg_col = omp_get_thread_num()%sqroot * (n/sqrt(num_threads));
+       int last_col;
+       if ((omp_get_thread_num() + 1)%sqroot * (n/sqrt(num_threads)) == 0){
+           last_col = n;
+       } else {
+           last_col = (omp_get_thread_num() + 1)%sqroot * (n/sqrt(num_threads));
+       }
+
+      //printf("\n%d rows: %i %i", omp_get_thread_num(), beg_row, last_row);
+
+      /* The neighbouring columns in each section in each row are looped through */
+
+       for (int section = 1; section < sqroot + 1; section++) {
+        int last_row = section%sqroot * (n/sqrt(num_threads));
+        int beg_row;
+        if (last_row == 0){
+          beg_row = n - 1;
+        } else {
+          beg_row = last_row - 1;
+        }
+        
+        //printf("\n%d rows: %i %i cols: %i %i", omp_get_thread_num(), beg_row, last_row, beg_col, last_col);
+
+         //printf("\ncol: %i %i", beg_col, last_col);
+        
+        int id1, id2;
+        for (int current_col = beg_col; current_col < last_col; current_col++) {
+
+          //printf("\n thread id: %d \t  row:  %i  [%i][%i]", omp_get_thread_num(), current_col, visited[beg_row][current_col], visited[last_row][current_col]);
+
+          if (visited[beg_row][current_col] != 0 && visited[last_row][current_col] != 0 && visited[beg_row][current_col] != visited[last_row][current_col]) {
+
+            //printf(" merge! ");
+
+             // The variable holding the number of unique cluster ids is decremented 
+            id -= 1;
+
+             // The clusters are merged
+            id1 = visited[beg_row][current_col];
+            id2 = visited[last_row][current_col];
+
+             //printf("\nAdded length: %i ",cluster_list[id2].length);
+
+             for (int site = 0; site < cluster_list[id2].length; site++){
+
+               int new_row = cluster_list[id2].locs[site][0];
+               int new_col = cluster_list[id2].locs[site][1];
+               //printf("\nnew loc: %i %i ", new_row, new_col);
+
+               // Add the locations the id2 cluster to the locations of the id1 cluster
+               cluster_list[id1].locs[cluster_list[id1].length][0] = new_row;
+               cluster_list[id1].locs[cluster_list[id1].length][1] = new_col;
+
+              
+               // The cluster being merged into (made bigger) has its length increased by the length of the other cluster
+               cluster_list[id1].length += 1;
+
+               // Replace id2 occurences with id1 on the visisted array
+               visited[new_row][new_col] = id1;
+             }
+
+            if (cluster_list[id1].length > max_cluster){
+              max_cluster = cluster_list[id1].length;
+            }
+
+           }
+         }
+       }
+      }
+       
+     
+
     
 
     // for (int i = 0; i < n; i++) {
@@ -345,13 +492,13 @@ int main(int argc, char *argv[]){
     // }
 
     //PRINTING LATTICE
-    printf("\n");
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            printf("%i ", lattice[i][j]);
-        }
-        printf("\n");
-    }
+    // printf("\n");
+    // for (int i = 0; i < n; i++) {
+    //     for (int j = 0; j < n; j++) {
+    //         printf("%i ", visited[i][j]);
+    //     }
+    //     printf("\n");
+    // }
 
     // for (int i = 0; i < n; i++){
     //   printf("\ncluster id: %i length: %i ", cluster_list[i].id, cluster_list[i].length);
@@ -363,14 +510,16 @@ int main(int argc, char *argv[]){
     //   }
     // }
 
-    printf("\nlength: %i", cluster_list[0].length);
+    // printf("\nlength: %i", cluster_list[0].length);
 
-    printf("\n%d", no_clusters);
-    printf("\n%d", max_cluster);
+    printf("\nnumber of cluster: %i", id);
+    printf("\nlargest cluster: %i", max_cluster);
     printf("\n%s", percolation ? "true" : "false");
 
     
     clock_t toc = clock();
     printf("\nElapsed: %f seconds", (double)(toc - tic) / CLOCKS_PER_SEC);
 }
+
+
 

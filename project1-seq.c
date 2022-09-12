@@ -7,7 +7,7 @@
 #include <omp.h>
 
 int indices[] = {-1, 0, +1};
-static int n = 256;
+static int n = 100;
 
 // For seeding
 double r()
